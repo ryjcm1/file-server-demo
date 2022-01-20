@@ -1,5 +1,5 @@
 const net = require('net');
-const fs = require("fs")
+const fs = require("fs");
 
 const port = 3000;
 
@@ -7,12 +7,10 @@ const port = 3000;
 const server = net.createServer();
 
 
-
-
 // server.js
 // add this line after server is created, before listen is called
 server.on('connection', (socket) => {
-  socket.setEncoding('utf-8')
+  socket.setEncoding('utf-8');
   
 
   console.log('New client connected!');
@@ -22,15 +20,32 @@ server.on('connection', (socket) => {
 
 
   socket.on('data', (data)=>{
-    let path = `./files/${data}`
+    
+    if (isFileRequest(data)) {
+      let fileName = data.split(" ")[1];
+
+      let path = `./files/${fileName}`;
+      let doesFileExist = fs.existsSync(path);
+    
+      if (doesFileExist) {
+        console.log(`sending ${data}...`);
+        let storedFile = fs.readFileSync(path, 'utf-8');
+        socket.write(storedFile);
   
-    if(fs.existsSync(path)){
-      socket.write(`The file ${data} exists!`)
-      let storedFile = fs.readFileSync(path, 'utf-8')
-      console.log(storedFile)
+        
+      } else {
+        socket.write("Error: This file does not exist in our servers.");
+      }
+
+
+    } else {
+      socket.write("Please type file: _____ for the file you want to download.");
     }
 
-  })
+
+  });
+
+  
 });
 
 
@@ -38,3 +53,14 @@ server.on('connection', (socket) => {
 server.listen(port, () => {
   console.log(`Server listening on port ${port}!`);
 });
+
+
+//checks if data is a file request
+isFileRequest = (input) =>{
+  let split = input.split(" ");
+  if (split.length === 2 && split[0] === "file:") {
+    return true;
+  }
+  return false;
+};
+
